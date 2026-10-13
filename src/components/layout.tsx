@@ -7,7 +7,7 @@ const ThemedToastContainer = () => {
   const { theme } = useTheme();
   return (
     <ToastContainer
-      position="top-right"
+      position="top-left"
       autoClose={5000}
       hideProgressBar={false}
       newestOnTop={false}
@@ -26,10 +26,10 @@ const Layout = ({ children }: PropsWithChildren) => {
   return (
     <ThemeProvider>
       <div className="h-screen flex flex-col">
-        <div className="justify-end flex p-3 shadow-lg">
+        <div className="absolute top-0 right-0 z-100 p-3 shadow-lg">
           <ModeToggle />
         </div>
-        <div className="flex-1">{children}</div>
+        <div className="flex-1 h-full overflow-hidden">{children}</div>
       </div>
       <ThemedToastContainer />
     </ThemeProvider>
