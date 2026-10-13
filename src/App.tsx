@@ -2,29 +2,30 @@ import "./App.css";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import Login from "./pages/login";
 import Home from "./pages/home";
-import Wrapper from "./components/wrapper";
+import Layout from "./components/layout";
+import AuthenticatedRoute from "./components/authenticated-route";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: (
-      <Wrapper>
+      <AuthenticatedRoute>
         <Home />
-      </Wrapper>
+      </AuthenticatedRoute>
     ),
   },
   {
     path: "/login",
-    element: (
-      <Wrapper>
-        <Login />
-      </Wrapper>
-    ),
+    element: <Login />,
   },
 ]);
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <Layout>
+      <RouterProvider router={router} />
+    </Layout>
+  );
 }
 
 export default App;

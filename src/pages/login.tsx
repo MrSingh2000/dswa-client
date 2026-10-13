@@ -9,8 +9,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLoginMutation } from "@/query/auth/login.query";
 
 const Login = () => {
+  const { mutateAsync: login } = useLoginMutation();
+
   return (
     <div className="w-full h-full flex justify-center items-center">
       <Card className="w-full max-w-sm gap-4 px-4 py-6">
