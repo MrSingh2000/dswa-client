@@ -1,5 +1,6 @@
 import { SocialLinks } from "@/const/social-links.const";
 import { useGetUserDetailsQuery } from "@/query/auth/login.query";
+import { queryKeys } from "@/query/query-keys";
 import { clearLocalStorage } from "@/utils/local-storage";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
@@ -66,7 +67,12 @@ const Sidebar = () => {
 
   const handleLogOut = () => {
     clearLocalStorage();
-    queryClient.resetQueries();
+    queryClient.setQueryData([queryKeys.userDetails], null);
+    queryClient.removeQueries({ queryKey: [queryKeys.userDetails] });
+    queryClient.invalidateQueries({ queryKey: [queryKeys.dsaProblems] });
+    queryClient.invalidateQueries({ queryKey: [queryKeys.dsaHierarchy] });
+    queryClient.removeQueries({ queryKey: [queryKeys.calendarMonth] });
+    queryClient.removeQueries({ queryKey: [queryKeys.calendarDay] });
     navigate("/");
   };
 

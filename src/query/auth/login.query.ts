@@ -29,11 +29,16 @@ export const useGetUserDetailsQuery = () => {
   return useQuery({
     queryKey: [queryKeys.userDetails],
     queryFn: async () => {
+      const token = getLocalStorage(LocalStorageKeys.token);
+      if (!token) return null;
       try {
         return await getUserDetailsRequest();
       } catch (error) {
         clearLocalStorage();
-        queryClient.clear();
+        queryClient.setQueryData([queryKeys.userDetails], null);
+        queryClient.removeQueries({ queryKey: [queryKeys.userDetails] });
+        queryClient.invalidateQueries({ queryKey: [queryKeys.dsaProblems] });
+        queryClient.invalidateQueries({ queryKey: [queryKeys.dsaHierarchy] });
         throw error;
       }
     },
