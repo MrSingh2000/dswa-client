@@ -18,12 +18,14 @@ import {
   type IProblem,
 } from "@/api/request/problems.request";
 import {
-  useGetDsaProblems,
-  useToggleProblemStatus,
+  useGetDsaProblemsQuery,
+  useToggleProblemStatusMutation,
 } from "@/query/dsa/dsa-problems.query";
 import { cn } from "cn";
 import Loader from "@/components/loader";
 import { toaster } from "@/utils/toaster";
+import { useGetUserDetailsQuery } from "@/query/auth/login.query";
+import PerformLoginDialog from "@/components/perform-login-dialog";
 
 const AllProblems = () => {
   const [pageNum, setPageNum] = useState(1);
@@ -35,14 +37,16 @@ const AllProblems = () => {
   const [chapter, setChapter] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { mutate: toggleStatus, isPending: isUpdatingStatus } =
-    useToggleProblemStatus();
+  const [performLoginDialogVisible, setPerformLoginDialogVisible] =
+    useState(false);
+
+  const { mutate: toggleStatus } = useToggleProblemStatusMutation();
 
   const {
     data: dsaProblems,
     isLoading,
     isFetching,
-  } = useGetDsaProblems({
+  } = useGetDsaProblemsQuery({
     page: pageNum,
     limit,
     difficulty,
@@ -50,7 +54,8 @@ const AllProblems = () => {
     chapter,
   });
 
-  console.log("porblmes: ", dsaProblems)
+  const { data: userDetails } = useGetUserDetailsQuery();
+  const isLoggedIn = !!userDetails?.email;
 
   const problemsList = dsaProblems?.problems || [];
 
@@ -122,8 +127,30 @@ const AllProblems = () => {
     );
   };
 
+  const handleChangeProblemStatus = (problem: IProblem) => {
+    if (!isLoggedIn) {
+      setPerformLoginDialogVisible(true);
+      return;
+    }
+    const nextState = !problem.isCompleted;
+    toggleStatus({
+      problemId: problem._id,
+      isCompleted: nextState,
+    });
+    if (nextState) {
+      toaster.success(`Marked "${problem.title}" as completed`);
+    } else {
+      toaster.info(`Marked "${problem.title}" as incomplete`);
+    }
+  };
+
   return (
     <div className="flex flex-1 flex-col h-full min-h-0 gap-5 p-2 overflow-hidden">
+      <PerformLoginDialog
+        open={performLoginDialogVisible}
+        onOpenChange={setPerformLoginDialogVisible}
+        featureName="premium features"
+      />  
       {/* Page Header */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
         <div>
@@ -310,18 +337,7 @@ const AllProblems = () => {
                         <input
                           type="checkbox"
                           checked={problem.isCompleted ?? false}
-                          onChange={() => {
-                            const nextState = !problem.isCompleted;
-                            toggleStatus({
-                              problemId: problem._id,
-                              isCompleted: nextState,
-                            });
-                            if (nextState) {
-                              toaster.success(`Marked "${problem.title}" as completed`);
-                            } else {
-                              toaster.info(`Marked "${problem.title}" as incomplete`);
-                            }
-                          }}
+                          onChange={() => handleChangeProblemStatus(problem)}
                           aria-label={`Mark ${problem.title} as completed`}
                           className="h-4 w-4 rounded-sm border-primary/50 text-primary accent-primary focus:ring-1 focus:ring-ring cursor-pointer transition-all"
                         />
@@ -330,7 +346,8 @@ const AllProblems = () => {
                     <td
                       className={cn(
                         "px-4 py-3.5 font-medium text-foreground",
-                        problem.isCompleted && "line-through text-muted-foreground opacity-80",
+                        problem.isCompleted &&
+                          "line-through text-muted-foreground opacity-80",
                       )}
                     >
                       {problem.title}

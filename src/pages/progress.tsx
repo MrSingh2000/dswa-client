@@ -1,14 +1,11 @@
 import React, { useMemo } from "react";
-import { useGetDsaHierarchy } from "@/query/dsa/dsa-chapters.query";
-import { useToggleProblemStatus } from "@/query/dsa/dsa-problems.query";
+import { useGetDsaHierarchyQuery } from "@/query/dsa/dsa-chapters.query";
 import Loader from "@/components/loader";
-import { toaster } from "@/utils/toaster";
 import {
   extractAllProblems,
   computeProgressStats,
   computeTopicStats,
   computeRecentActivity,
-  type FlatProblem,
 } from "@/components/progress/progress-helpers";
 import { ProgressStatsCards } from "@/components/progress/progress-stats-cards";
 import { DifficultyChartCard } from "@/components/progress/difficulty-chart-card";
@@ -22,8 +19,7 @@ const Progress = () => {
     isLoading,
     isError,
     refetch,
-  } = useGetDsaHierarchy();
-  const { mutate: toggleStatus } = useToggleProblemStatus();
+  } = useGetDsaHierarchyQuery();
 
   const topics = hierarchyData?.topics || [];
 
@@ -102,9 +98,7 @@ const Progress = () => {
 
         {/* Solved Problems Records Table */}
         <div className="flex flex-col min-h-[420px]">
-          <ProblemsHistoryTable
-            problems={allProblems}
-          />
+          <ProblemsHistoryTable problems={allProblems} />
         </div>
       </div>
     </div>

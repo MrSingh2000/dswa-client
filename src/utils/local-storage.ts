@@ -14,6 +14,12 @@ export const getLocalStorage = <T>(
   return JSON.parse(data);
 };
 
+export const clearLocalStorage = () => {
+  for (const key of Object.values(LocalStorageKeys)) {
+    localStorage.removeItem(key);
+  }
+};
+
 export const LocalStorageKeys = {
   token: "token",
 };

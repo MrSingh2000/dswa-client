@@ -21,9 +21,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormError } from "@/components/ui/form-error";
 import Loader from "@/components/loader";
-import { useAddCalendarEvent } from "@/query/calendar/calendar.query";
+import { useAddCalendarEventMutation } from "@/query/calendar/calendar.query";
 import { toaster } from "@/utils/toaster";
-import { addTaskSchema, type AddTaskFormValues } from "@/schemas/add-task.schema";
+import {
+  addTaskSchema,
+  type AddTaskFormValues,
+} from "@/schemas/add-task.schema";
 
 interface AddTaskDialogProps {
   isOpen: boolean;
@@ -36,7 +39,7 @@ export const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
   defaultDate,
   onClose,
 }) => {
-  const { mutateAsync: addEvent, isPending } = useAddCalendarEvent();
+  const { mutateAsync: addEvent, isPending } = useAddCalendarEventMutation();
 
   const {
     register,
@@ -103,7 +106,8 @@ export const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
             <DialogTitle>Add Calendar Task</DialogTitle>
           </div>
           <DialogDescription>
-            Schedule a problem, revision reminder, or custom study session for your roadmap.
+            Schedule a problem, revision reminder, or custom study session for
+            your roadmap.
           </DialogDescription>
         </DialogHeader>
 
@@ -160,7 +164,9 @@ export const AddTaskDialog: React.FC<AddTaskDialogProps> = ({
                   <SelectContent>
                     <SelectItem value="problem">Problem Practice</SelectItem>
                     <SelectItem value="revision">Spaced Revision</SelectItem>
-                    <SelectItem value="custom">Custom Task / Mock Interview</SelectItem>
+                    <SelectItem value="custom">
+                      Custom Task / Mock Interview
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               )}

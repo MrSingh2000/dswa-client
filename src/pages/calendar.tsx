@@ -3,12 +3,12 @@ import { DateTime } from "luxon";
 import Loader from "@/components/loader";
 import { toaster } from "@/utils/toaster";
 import {
-  useGetCalendarMonth,
-  useGetCalendarDay,
-  useUpdateCalendarEvent,
-  useDeleteCalendarEvent,
-  useAddCalendarEvent,
-  useClearCalendarPlan,
+  useGetCalendarMonthQuery,
+  useGetCalendarDayQuery,
+  useUpdateCalendarEventMutation,
+  useDeleteCalendarEventMutation,
+  useAddCalendarEventMutation,
+  useClearCalendarPlanMutation,
 } from "@/query/calendar/calendar.query";
 import { CalendarHeader } from "@/components/calendar/calendar-header";
 import { CalendarMonthGrid } from "@/components/calendar/calendar-month-grid";
@@ -30,14 +30,17 @@ const Calendar = () => {
   const month = currentDate.month; // 1-indexed
 
   // Queries
-  const { data: monthData, isLoading: isMonthLoading } = useGetCalendarMonth(year, month);
-  const { data: dayData, isLoading: isDayLoading } = useGetCalendarDay(selectedDate);
+  const { data: monthData, isLoading: isMonthLoading } =
+    useGetCalendarMonthQuery(year, month);
+  const { data: dayData, isLoading: isDayLoading } =
+    useGetCalendarDayQuery(selectedDate);
 
   // Mutations
-  const { mutate: updateEvent } = useUpdateCalendarEvent();
-  const { mutate: deleteEvent } = useDeleteCalendarEvent();
-  const { mutate: addEvent } = useAddCalendarEvent();
-  const { mutateAsync: clearPlan, isPending: isClearing } = useClearCalendarPlan();
+  const { mutate: updateEvent } = useUpdateCalendarEventMutation();
+  const { mutate: deleteEvent } = useDeleteCalendarEventMutation();
+  const { mutate: addEvent } = useAddCalendarEventMutation();
+  const { mutateAsync: clearPlan, isPending: isClearing } =
+    useClearCalendarPlanMutation();
 
   // Month navigation handlers
   const handlePrevMonth = () => {
@@ -82,7 +85,11 @@ const Calendar = () => {
   };
 
   const handleClearFuturePlan = async () => {
-    if (!window.confirm("Are you sure you want to clear upcoming study plan tasks?")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to clear upcoming study plan tasks?",
+      )
+    ) {
       return;
     }
     try {
@@ -108,7 +115,7 @@ const Calendar = () => {
       />
 
       {/* Main Calendar Workspace (Month Grid + Day Panel) */}
-      <div className="flex flex-1 flex-col lg:flex-row gap-4 min-h-0 overflow-hidden">
+      <div className="flex flex-1 flex-col lg:flex-row gap-4 min-h-0 overflow-auto">
         {/* Monthly Grid View */}
         {isMonthLoading ? (
           <div className="flex flex-1 items-center justify-center rounded-xl border border-border bg-card">

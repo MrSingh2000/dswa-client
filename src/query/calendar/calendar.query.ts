@@ -16,14 +16,14 @@ import {
   type UpdateEventPayload,
 } from "@/api/request/calendar.request";
 
-export const useGetCalendarMonth = (year: number, month: number) => {
+export const useGetCalendarMonthQuery = (year: number, month: number) => {
   return useQuery({
     queryKey: [queryKeys.calendarMonth, year, month],
     queryFn: () => getCalendarMonthRequest(year, month),
   });
 };
 
-export const useGetCalendarDay = (date: string) => {
+export const useGetCalendarDayQuery = (date: string) => {
   return useQuery({
     queryKey: [queryKeys.calendarDay, date],
     queryFn: () => getCalendarDayRequest(date),
@@ -31,7 +31,10 @@ export const useGetCalendarDay = (date: string) => {
   });
 };
 
-export const useGetCalendarPreview = (payload: GeneratePlanPayload, enabled: boolean = false) => {
+export const useGetCalendarPreviewQuery = (
+  payload: GeneratePlanPayload,
+  enabled: boolean = false,
+) => {
   return useQuery({
     queryKey: [queryKeys.calendarPreview, payload],
     queryFn: () => getCalendarPreviewRequest(payload),
@@ -39,10 +42,11 @@ export const useGetCalendarPreview = (payload: GeneratePlanPayload, enabled: boo
   });
 };
 
-export const useGenerateCalendarPlan = () => {
+export const useGenerateCalendarPlanMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: GeneratePlanPayload) => generateCalendarPlanRequest(payload),
+    mutationFn: (payload: GeneratePlanPayload) =>
+      generateCalendarPlanRequest(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [queryKeys.calendarMonth] });
       queryClient.invalidateQueries({ queryKey: [queryKeys.calendarDay] });
@@ -50,10 +54,11 @@ export const useGenerateCalendarPlan = () => {
   });
 };
 
-export const useQuickSchedule = () => {
+export const useQuickScheduleMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: QuickSchedulePayload) => quickScheduleRequest(payload),
+    mutationFn: (payload: QuickSchedulePayload) =>
+      quickScheduleRequest(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [queryKeys.calendarMonth] });
       queryClient.invalidateQueries({ queryKey: [queryKeys.calendarDay] });
@@ -61,7 +66,7 @@ export const useQuickSchedule = () => {
   });
 };
 
-export const useAddCalendarEvent = () => {
+export const useAddCalendarEventMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: AddEventPayload) => addCalendarEventRequest(payload),
@@ -72,11 +77,16 @@ export const useAddCalendarEvent = () => {
   });
 };
 
-export const useUpdateCalendarEvent = () => {
+export const useUpdateCalendarEventMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: UpdateEventPayload }) =>
-      updateCalendarEventRequest(id, payload),
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: UpdateEventPayload;
+    }) => updateCalendarEventRequest(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [queryKeys.calendarMonth] });
       queryClient.invalidateQueries({ queryKey: [queryKeys.calendarDay] });
@@ -86,7 +96,7 @@ export const useUpdateCalendarEvent = () => {
   });
 };
 
-export const useDeleteCalendarEvent = () => {
+export const useDeleteCalendarEventMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteCalendarEventRequest(id),
@@ -97,7 +107,7 @@ export const useDeleteCalendarEvent = () => {
   });
 };
 
-export const useClearCalendarPlan = () => {
+export const useClearCalendarPlanMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (fromDate?: string) => clearCalendarPlanRequest(fromDate),

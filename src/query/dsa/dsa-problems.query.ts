@@ -9,7 +9,7 @@ import { queryKeys } from "../query-keys";
 import type { DsaSheetHierarchyResponse } from "@/api/request/chapters.request";
 import { DateTime } from "luxon";
 
-interface IUseGetDsaProblemsParams {
+interface IuseGetDsaProblemsParams {
   page?: number;
   limit?: number;
   difficulty?: ProblemDificulty;
@@ -17,13 +17,13 @@ interface IUseGetDsaProblemsParams {
   chapter?: string;
 }
 
-export const useGetDsaProblems = ({
+export const useGetDsaProblemsQuery = ({
   page = 1,
   limit = 50,
   difficulty,
   topic,
   chapter,
-}: IUseGetDsaProblemsParams) => {
+}: IuseGetDsaProblemsParams) => {
   return useQuery({
     queryKey: [
       queryKeys.dsaProblems,
@@ -34,7 +34,7 @@ export const useGetDsaProblems = ({
   });
 };
 
-export const useToggleProblemStatus = () => {
+export const useToggleProblemStatusMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({

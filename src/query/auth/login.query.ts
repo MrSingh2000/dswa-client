@@ -1,10 +1,11 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   loginRequest,
   type LoginRequest,
 } from "../../api/request/login.request";
 import {
   LocalStorageKeys,
+  clearLocalStorage,
   getLocalStorage,
   setLocalStorage,
 } from "@/utils/local-storage";
@@ -23,9 +24,21 @@ export const useLoginMutation = () => {
 };
 
 export const useGetUserDetailsQuery = () => {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: [queryKeys.userDetails],
-    queryFn: () => getUserDetailsRequest(),
+    queryFn: async () => {
+      try {
+        return await getUserDetailsRequest();
+      } catch (error) {
+        clearLocalStorage();
+        queryClient.clear();
+        throw error;
+      }
+    },
     enabled: !!getLocalStorage(LocalStorageKeys.token),
+    retry: false,
   });
 };
+

@@ -31,12 +31,18 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormError } from "@/components/ui/form-error";
 import Loader from "@/components/loader";
-import { useGetCalendarPreview, useGenerateCalendarPlan } from "@/query/calendar/calendar.query";
-import { useGetDsaHierarchy } from "@/query/dsa/dsa-chapters.query";
+import {
+  useGetCalendarPreviewQuery,
+  useGenerateCalendarPlanMutation,
+} from "@/query/calendar/calendar.query";
+import { useGetDsaHierarchyQuery } from "@/query/dsa/dsa-chapters.query";
 import { toaster } from "@/utils/toaster";
 import { cn } from "cn";
 import type { GeneratePlanPayload } from "@/api/request/calendar.request";
-import { autoPlanSchema, type AutoPlanFormValues } from "@/schemas/auto-plan.schema";
+import {
+  autoPlanSchema,
+  type AutoPlanFormValues,
+} from "@/schemas/auto-plan.schema";
 
 interface AutoPlanGeneratorDialogProps {
   isOpen: boolean;
@@ -45,10 +51,9 @@ interface AutoPlanGeneratorDialogProps {
 
 const PRESET_HOURS = [1, 1.5, 2, 2.5, 3, 4] as const;
 
-export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = ({
-  isOpen,
-  onClose,
-}) => {
+export const AutoPlanGeneratorDialog: React.FC<
+  AutoPlanGeneratorDialogProps
+> = ({ isOpen, onClose }) => {
   const tomorrowStr = DateTime.now().plus({ days: 1 }).toISODate() ?? "";
 
   const {
@@ -87,12 +92,15 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
   const watchedValues = watch();
 
   // Topics for filter dropdown
-  const { data: hierarchyData } = useGetDsaHierarchy();
+  const { data: hierarchyData } = useGetDsaHierarchyQuery();
   const topics = hierarchyData?.topics || [];
 
   // Preview Query
   const previewPayload: GeneratePlanPayload = {
-    topicIds: watchedValues.selectedTopicId === "all" ? "all" : [watchedValues.selectedTopicId],
+    topicIds:
+      watchedValues.selectedTopicId === "all"
+        ? "all"
+        : [watchedValues.selectedTopicId],
     startDate: watchedValues.startDate || tomorrowStr,
     dailyHours: Number(watchedValues.dailyHours) || 2,
     includeSolved: watchedValues.includeSolved,
@@ -102,10 +110,11 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
     data: previewData,
     isLoading: isPreviewLoading,
     isFetching: isPreviewFetching,
-  } = useGetCalendarPreview(previewPayload, isOpen);
+  } = useGetCalendarPreviewQuery(previewPayload, isOpen);
 
   // Generate Mutation
-  const { mutateAsync: generatePlan, isPending: isGenerating } = useGenerateCalendarPlan();
+  const { mutateAsync: generatePlan, isPending: isGenerating } =
+    useGenerateCalendarPlanMutation();
 
   const onSubmit = async (values: AutoPlanFormValues) => {
     const parseResult = autoPlanSchema.safeParse(values);
@@ -121,7 +130,10 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
 
     try {
       const res = await generatePlan({
-        topicIds: parseResult.data.selectedTopicId === "all" ? "all" : [parseResult.data.selectedTopicId],
+        topicIds:
+          parseResult.data.selectedTopicId === "all"
+            ? "all"
+            : [parseResult.data.selectedTopicId],
         startDate: parseResult.data.startDate,
         dailyHours: parseResult.data.dailyHours,
         includeSolved: parseResult.data.includeSolved,
@@ -144,7 +156,9 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-bold">Auto-Generate Study Plan</DialogTitle>
+              <DialogTitle className="text-lg font-bold">
+                Auto-Generate Study Plan
+              </DialogTitle>
               <DialogDescription className="text-xs">
                 Intelligently pace your preparation based on your daily capacity
               </DialogDescription>
@@ -153,12 +167,18 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
         </DialogHeader>
 
         {/* Scrollable Form Content */}
-        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex-1 overflow-y-auto p-6 space-y-6"
+        >
           {/* Inputs Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Topic Selection */}
             <div className="space-y-1.5">
-              <Label htmlFor="plan-topic-scope" className="text-xs font-semibold">
+              <Label
+                htmlFor="plan-topic-scope"
+                className="text-xs font-semibold"
+              >
                 Curriculum Scope
               </Label>
               <Controller
@@ -170,11 +190,16 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
                     onValueChange={field.onChange}
                     disabled={isGenerating}
                   >
-                    <SelectTrigger id="plan-topic-scope" className="w-full h-9 text-xs">
+                    <SelectTrigger
+                      id="plan-topic-scope"
+                      className="w-full h-9 text-xs"
+                    >
                       <SelectValue placeholder="Select curriculum scope" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Topics ({topics.length} topics)</SelectItem>
+                      <SelectItem value="all">
+                        All Topics ({topics.length} topics)
+                      </SelectItem>
                       {topics.map((t) => (
                         <SelectItem key={t._id} value={t._id}>
                           {t.title}
@@ -189,7 +214,10 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
 
             {/* Start Date */}
             <div className="space-y-1.5">
-              <Label htmlFor="plan-start-date" className="text-xs font-semibold">
+              <Label
+                htmlFor="plan-start-date"
+                className="text-xs font-semibold"
+              >
                 Start Date
               </Label>
               <Input
@@ -207,7 +235,10 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
             {/* Daily Hours Commitment */}
             <div className="space-y-1.5 sm:col-span-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="plan-daily-hours" className="text-xs font-semibold">
+                <Label
+                  htmlFor="plan-daily-hours"
+                  className="text-xs font-semibold"
+                >
                   Daily Study Hours Commitment
                 </Label>
                 <span className="text-xs font-mono font-bold text-primary">
@@ -224,7 +255,9 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
                     key={h}
                     type="button"
                     disabled={isGenerating}
-                    onClick={() => setValue("dailyHours", h, { shouldValidate: true })}
+                    onClick={() =>
+                      setValue("dailyHours", h, { shouldValidate: true })
+                    }
                     className={cn(
                       "flex-1 rounded-lg border py-1.5 text-xs font-medium transition-colors cursor-pointer",
                       watchedValues.dailyHours === h
@@ -258,7 +291,8 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
                   className="rounded border-border text-primary accent-primary"
                   {...register("replaceExisting")}
                 />
-                Replace future incomplete schedule items starting from start date
+                Replace future incomplete schedule items starting from start
+                date
               </label>
             </div>
           </div>
@@ -312,7 +346,8 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
 
                   <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <CheckCircle className="h-3 w-3 text-emerald-500" /> Completion
+                      <CheckCircle className="h-3 w-3 text-emerald-500" />{" "}
+                      Completion
                     </span>
                     <span className="text-xs font-bold text-emerald-500 mt-1 truncate">
                       {previewData.endDate}
@@ -337,7 +372,10 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
                     className="flex items-center justify-between rounded-lg border border-border bg-background p-2.5 text-xs gap-2"
                   >
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="font-mono text-[10px]">
+                      <Badge
+                        variant="outline"
+                        className="font-mono text-[10px]"
+                      >
                         Day {idx + 1} ({day.date})
                       </Badge>
                       <span className="text-foreground font-medium truncate max-w-[280px]">
@@ -370,7 +408,9 @@ export const AutoPlanGeneratorDialog: React.FC<AutoPlanGeneratorDialogProps> = (
             <Button
               type="submit"
               size="sm"
-              disabled={isGenerating || !previewData || previewData.totalProblems === 0}
+              disabled={
+                isGenerating || !previewData || previewData.totalProblems === 0
+              }
               className="gap-2 text-xs cursor-pointer shadow-xs"
             >
               {isGenerating ? (

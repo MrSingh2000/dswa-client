@@ -12,24 +12,26 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: (
-      <AuthenticatedRoute>
+      <Layout>
         <AllProblems />
-      </AuthenticatedRoute>
+      </Layout>
     ),
   },
   {
     path: "/chapters",
     element: (
-      <AuthenticatedRoute>
+      <Layout>
         <Chapters />
-      </AuthenticatedRoute>
+      </Layout>
     ),
   },
   {
     path: "/progress",
     element: (
       <AuthenticatedRoute>
-        <Progress />
+        <Layout>
+          <Progress />
+        </Layout>
       </AuthenticatedRoute>
     ),
   },
@@ -37,22 +39,24 @@ const router = createBrowserRouter([
     path: "/calendar",
     element: (
       <AuthenticatedRoute>
-        <Calendar />
+        <Layout>
+          <Calendar />
+        </Layout>
       </AuthenticatedRoute>
     ),
   },
   {
     path: "/login",
-    element: <Login />,
+    element: (
+      <Layout>
+        <Login />
+      </Layout>
+    ),
   },
 ]);
 
 function App() {
-  return (
-    <Layout>
-      <RouterProvider router={router} />
-    </Layout>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

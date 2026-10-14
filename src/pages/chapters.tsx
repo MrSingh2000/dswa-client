@@ -10,8 +10,8 @@ import {
   FolderTree,
   ChevronsUpDown,
 } from "lucide-react";
-import { useGetDsaHierarchy } from "@/query/dsa/dsa-chapters.query";
-import { useToggleProblemStatus } from "@/query/dsa/dsa-problems.query";
+import { useGetDsaHierarchyQuery } from "@/query/dsa/dsa-chapters.query";
+import { useToggleProblemStatusMutation } from "@/query/dsa/dsa-problems.query";
 import { toaster } from "@/utils/toaster";
 import type {
   ITopicHierarchy,
@@ -32,18 +32,22 @@ import {
 } from "@/components/ui/table";
 import Loader from "@/components/loader";
 import { cn } from "cn";
+import { useGetUserDetailsQuery } from "@/query/auth/login.query";
+import PerformLoginDialog from "@/components/perform-login-dialog";
 
 // Sub-component for rendering difficulty badges with design system colors
-const ProblemDifficultyBadge = memo(({ difficulty }: { difficulty?: string }) => {
-  const formatted = difficulty?.toLowerCase() || "easy";
-  if (formatted === "easy") {
-    return <Badge variant="success">Easy</Badge>;
-  }
-  if (formatted === "medium") {
-    return <Badge variant="warning">Medium</Badge>;
-  }
-  return <Badge variant="destructive">Hard</Badge>;
-});
+const ProblemDifficultyBadge = memo(
+  ({ difficulty }: { difficulty?: string }) => {
+    const formatted = difficulty?.toLowerCase() || "easy";
+    if (formatted === "easy") {
+      return <Badge variant="success">Easy</Badge>;
+    }
+    if (formatted === "medium") {
+      return <Badge variant="warning">Medium</Badge>;
+    }
+    return <Badge variant="destructive">Hard</Badge>;
+  },
+);
 
 ProblemDifficultyBadge.displayName = "ProblemDifficultyBadge";
 
@@ -207,16 +211,35 @@ ChapterProblemsTable.displayName = "ChapterProblemsTable";
 
 const Chapters = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTopicId, setSelectedTopicId] = useState<string | undefined>(undefined);
-  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
-  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
+  const [selectedTopicId, setSelectedTopicId] = useState<string | undefined>(
+    undefined,
+  );
+  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [expandedChapters, setExpandedChapters] = useState<
+    Record<string, boolean>
+  >({});
+  const [performLoginDialogVisible, setPerformLoginDialogVisible] = useState(false)
 
-  const { data: hierarchyData, isLoading, isFetching } = useGetDsaHierarchy();
-  const { mutate: toggleStatus } = useToggleProblemStatus();
+  const {data: userDetails} = useGetUserDetailsQuery();
+  const isLoggedIn = !!userDetails?.email;
+
+  const {
+    data: hierarchyData,
+    isLoading,
+    isFetching,
+  } = useGetDsaHierarchyQuery();
+  const { mutate: toggleStatus } = useToggleProblemStatusMutation();
   const topicsList = hierarchyData?.topics || [];
 
   const handleToggleProblem = (problem: IChapterProblem) => {
     const nextState = !problem.isCompleted;
+
+    if (!isLoggedIn) {
+      setPerformLoginDialogVisible(true)
+      return;
+    }
     toggleStatus({
       problemId: problem._id,
       isCompleted: nextState,
@@ -320,6 +343,11 @@ const Chapters = () => {
 
   return (
     <div className="flex flex-1 flex-col h-full min-h-0 gap-5 p-2 overflow-hidden bg-background">
+      <PerformLoginDialog 
+        open={performLoginDialogVisible}
+        onOpenChange={setPerformLoginDialogVisible}
+        featureName="premium features"
+      />
       {/* Header & Controls Toolbar */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-4">
         <div>
@@ -402,12 +430,18 @@ const Chapters = () => {
       {/* Main Hierarchical Content Container */}
       {isLoading ? (
         <div className="flex h-72 items-center justify-center">
-          <Loader size={32} text="Loading topics syllabus..." className="h-auto w-auto" />
+          <Loader
+            size={32}
+            text="Loading topics syllabus..."
+            className="h-auto w-auto"
+          />
         </div>
       ) : filteredTopics.length === 0 ? (
         <Card className="flex flex-col items-center justify-center border-dashed py-16 text-center">
           <FolderTree className="h-10 w-10 text-muted-foreground/60 mb-3" />
-          <h3 className="text-base font-semibold text-foreground">No topics found</h3>
+          <h3 className="text-base font-semibold text-foreground">
+            No topics found
+          </h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Try adjusting your search query or topic filter.
           </p>
@@ -432,7 +466,9 @@ const Chapters = () => {
                     onClick={() => toggleTopic(topicItem._id)}
                     className={cn(
                       "flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors cursor-pointer",
-                      isTopicExpanded ? "bg-muted/50 hover:bg-muted/70" : "hover:bg-muted/30",
+                      isTopicExpanded
+                        ? "bg-muted/50 hover:bg-muted/70"
+                        : "hover:bg-muted/30",
                     )}
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -446,11 +482,15 @@ const Chapters = () => {
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="text-primary border-primary/30 font-mono">
+                          <Badge
+                            variant="outline"
+                            className="text-primary border-primary/30 font-mono"
+                          >
                             Topic {topicItem.order ?? tIdx + 1}
                           </Badge>
                           <Badge variant="secondary">
-                            {chapterCount} {chapterCount === 1 ? "chapter" : "chapters"}
+                            {chapterCount}{" "}
+                            {chapterCount === 1 ? "chapter" : "chapters"}
                           </Badge>
                         </div>
                         <h2 className="text-base font-bold text-foreground truncate mt-1">
@@ -474,62 +514,77 @@ const Chapters = () => {
                           No chapters found in this topic.
                         </div>
                       ) : (
-                        topicItem.chapters.map((chapterItem: IChapter, cIdx: number) => {
-                          const isChapterExpanded =
-                            expandedChapters[chapterItem._id] ?? searchQuery.trim().length > 0;
-                          const problemCount = chapterItem.problems?.length || 0;
+                        topicItem.chapters.map(
+                          (chapterItem: IChapter, cIdx: number) => {
+                            const isChapterExpanded =
+                              expandedChapters[chapterItem._id] ??
+                              searchQuery.trim().length > 0;
+                            const problemCount =
+                              chapterItem.problems?.length || 0;
 
-                          return (
-                            <div key={chapterItem._id} className="pl-6 group/chapter">
-                              {/* CHAPTER SUB-TRIGGER */}
-                              <button
-                                type="button"
-                                onClick={() => toggleChapter(chapterItem._id)}
-                                className={cn(
-                                  "flex w-full items-center justify-between gap-4 px-5 py-3 text-left transition-colors cursor-pointer",
-                                  isChapterExpanded ? "bg-muted/30 hover:bg-muted/50" : "hover:bg-muted/20",
-                                )}
+                            return (
+                              <div
+                                key={chapterItem._id}
+                                className="pl-6 group/chapter"
                               >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors group-hover/chapter:border-primary/50 group-hover/chapter:text-primary">
-                                    {isChapterExpanded ? (
-                                      <ChevronDown className="h-3.5 w-3.5" />
-                                    ) : (
-                                      <ChevronRight className="h-3.5 w-3.5" />
-                                    )}
-                                  </div>
-
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-[11px] font-mono text-muted-foreground">
-                                        Sub-topic {cIdx + 1}
-                                      </span>
+                                {/* CHAPTER SUB-TRIGGER */}
+                                <button
+                                  type="button"
+                                  onClick={() => toggleChapter(chapterItem._id)}
+                                  className={cn(
+                                    "flex w-full items-center justify-between gap-4 px-5 py-3 text-left transition-colors cursor-pointer",
+                                    isChapterExpanded
+                                      ? "bg-muted/30 hover:bg-muted/50"
+                                      : "hover:bg-muted/20",
+                                  )}
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors group-hover/chapter:border-primary/50 group-hover/chapter:text-primary">
+                                      {isChapterExpanded ? (
+                                        <ChevronDown className="h-3.5 w-3.5" />
+                                      ) : (
+                                        <ChevronRight className="h-3.5 w-3.5" />
+                                      )}
                                     </div>
-                                    <h3 className="text-sm font-semibold text-foreground truncate mt-0.5">
-                                      {chapterItem.title}
-                                    </h3>
+
+                                    <div className="min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[11px] font-mono text-muted-foreground">
+                                          Sub-topic {cIdx + 1}
+                                        </span>
+                                      </div>
+                                      <h3 className="text-sm font-semibold text-foreground truncate mt-0.5">
+                                        {chapterItem.title}
+                                      </h3>
+                                    </div>
                                   </div>
-                                </div>
 
-                                <div className="flex shrink-0 items-center gap-3">
-                                  <Badge variant="secondary" className="font-normal text-[11px]">
-                                    {problemCount} {problemCount === 1 ? "problem" : "problems"}
-                                  </Badge>
-                                </div>
-                              </button>
+                                  <div className="flex shrink-0 items-center gap-3">
+                                    <Badge
+                                      variant="secondary"
+                                      className="font-normal text-[11px]"
+                                    >
+                                      {problemCount}{" "}
+                                      {problemCount === 1
+                                        ? "problem"
+                                        : "problems"}
+                                    </Badge>
+                                  </div>
+                                </button>
 
-                              {/* LEVEL 3: PROBLEMS TABLE */}
-                              {isChapterExpanded && (
-                                <div className="ml-9 mr-5 my-2">
-                                  <ChapterProblemsTable
-                                    problems={chapterItem.problems}
-                                    onToggle={handleToggleProblem}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })
+                                {/* LEVEL 3: PROBLEMS TABLE */}
+                                {isChapterExpanded && (
+                                  <div className="ml-9 mr-5 my-2">
+                                    <ChapterProblemsTable
+                                      problems={chapterItem.problems}
+                                      onToggle={handleToggleProblem}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          },
+                        )
                       )}
                     </div>
                   )}
