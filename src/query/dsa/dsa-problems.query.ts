@@ -2,10 +2,12 @@ import {
   getDsaProblemsRequest,
   updateProblemStatusRequest,
   type ProblemDificulty,
+  type DsaProblemsResponse,
 } from "@/api/request/problems.request";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../query-keys";
-import { toaster } from "@/utils/toaster";
+import type { DsaSheetHierarchyResponse } from "@/api/request/chapters.request";
+import { DateTime } from "luxon";
 
 interface IUseGetDsaProblemsParams {
   page?: number;
@@ -23,7 +25,10 @@ export const useGetDsaProblems = ({
   chapter,
 }: IUseGetDsaProblemsParams) => {
   return useQuery({
-    queryKey: [queryKeys.dsaProblems, { page, limit, difficulty, topic, chapter }],
+    queryKey: [
+      queryKeys.dsaProblems,
+      { page, limit, difficulty, topic, chapter },
+    ],
     queryFn: () =>
       getDsaProblemsRequest(page, limit, difficulty, topic, chapter),
   });
@@ -43,65 +48,58 @@ export const useToggleProblemStatus = () => {
       notes?: string;
     }) => updateProblemStatusRequest(problemId, isCompleted, notes),
 
-    onMutate: async ({ problemId, isCompleted }) => {
-      // Cancel outgoing queries so they don't overwrite optimistic update
+    onMutate: async ({ problemId, isCompleted: explicitIsCompleted }) => {
       await queryClient.cancelQueries({ queryKey: [queryKeys.dsaProblems] });
       await queryClient.cancelQueries({ queryKey: [queryKeys.dsaHierarchy] });
 
-      // Snapshot previous values for rollback
-      const previousProblemsQueries = queryClient.getQueriesData({
-        queryKey: [queryKeys.dsaProblems],
-      });
-      const previousHierarchyQueries = queryClient.getQueriesData({
-        queryKey: [queryKeys.dsaHierarchy],
-      });
+      const nowIso = DateTime.now().toISO();
 
-      // 1. Optimistically update all matching `dsaProblems` cache entries
-      queryClient.setQueriesData<any>(
+      // Optimistically update all queries matching dsaProblems
+      queryClient.setQueriesData<DsaProblemsResponse>(
         { queryKey: [queryKeys.dsaProblems] },
         (oldData) => {
-          if (!oldData?.problems) return oldData;
+          if (!oldData) return oldData;
           return {
             ...oldData,
-            problems: oldData.problems.map((problem: any) => {
-              if (problem._id === problemId) {
+            problems: oldData.problems.map((p) => {
+              if (p._id === problemId) {
                 const nextState =
-                  typeof isCompleted === "boolean"
-                    ? isCompleted
-                    : !problem.isCompleted;
+                  typeof explicitIsCompleted === "boolean"
+                    ? explicitIsCompleted
+                    : !p.isCompleted;
                 return {
-                  ...problem,
+                  ...p,
                   isCompleted: nextState,
-                  completedAt: nextState ? new Date().toISOString() : null,
+                  completedAt: nextState ? nowIso : undefined,
                 };
               }
-              return problem;
+              return p;
             }),
           };
         },
       );
 
-      // 2. Optimistically update `dsaHierarchy` cache entries
-      queryClient.setQueriesData<any>(
+      // Optimistically update hierarchy query
+      queryClient.setQueriesData<DsaSheetHierarchyResponse>(
         { queryKey: [queryKeys.dsaHierarchy] },
         (oldData) => {
-          if (!oldData?.topics) return oldData;
+          if (!oldData) return oldData;
           return {
             ...oldData,
-            topics: oldData.topics.map((topic: any) => ({
-              ...topic,
-              chapters: (topic.chapters || []).map((ch: any) => ({
-                ...ch,
-                problems: (ch.problems || []).map((p: any) => {
+            topics: oldData.topics.map((t) => ({
+              ...t,
+              chapters: (t.chapters || []).map((c) => ({
+                ...c,
+                problems: (c.problems || []).map((p) => {
                   if (p._id === problemId) {
                     const nextState =
-                      typeof isCompleted === "boolean"
-                        ? isCompleted
+                      typeof explicitIsCompleted === "boolean"
+                        ? explicitIsCompleted
                         : !p.isCompleted;
                     return {
                       ...p,
                       isCompleted: nextState,
-                      completedAt: nextState ? new Date().toISOString() : null,
+                      completedAt: nextState ? nowIso : undefined,
                     };
                   }
                   return p;
@@ -111,35 +109,13 @@ export const useToggleProblemStatus = () => {
           };
         },
       );
-
-      return { previousProblemsQueries, previousHierarchyQueries };
-    },
-
-    onError: (_err, _variables, context) => {
-      // Rollback to snapshots on error
-      if (context?.previousProblemsQueries) {
-        context.previousProblemsQueries.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
-      if (context?.previousHierarchyQueries) {
-        context.previousHierarchyQueries.forEach(([queryKey, data]) => {
-          queryClient.setQueryData(queryKey, data);
-        });
-      }
-      toaster.error("Failed to update status. Changes reverted.");
     },
 
     onSettled: () => {
-      // Silently sync in the background
-      queryClient.invalidateQueries({
-        queryKey: [queryKeys.dsaProblems],
-        refetchType: "none",
-      });
-      queryClient.invalidateQueries({
-        queryKey: [queryKeys.dsaHierarchy],
-        refetchType: "none",
-      });
+      queryClient.invalidateQueries({ queryKey: [queryKeys.dsaProblems] });
+      queryClient.invalidateQueries({ queryKey: [queryKeys.dsaHierarchy] });
+      queryClient.invalidateQueries({ queryKey: [queryKeys.calendarMonth] });
+      queryClient.invalidateQueries({ queryKey: [queryKeys.calendarDay] });
     },
   });
 };

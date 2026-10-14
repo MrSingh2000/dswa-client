@@ -6,6 +6,7 @@ import AuthenticatedRoute from "./components/authenticated-route";
 import AllProblems from "./pages/all-problems";
 import Chapters from "./pages/chapters";
 import Progress from "./pages/progress";
+import Calendar from "./pages/calendar";
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,14 @@ const router = createBrowserRouter([
     element: (
       <AuthenticatedRoute>
         <Progress />
+      </AuthenticatedRoute>
+    ),
+  },
+  {
+    path: "/calendar",
+    element: (
+      <AuthenticatedRoute>
+        <Calendar />
       </AuthenticatedRoute>
     ),
   },

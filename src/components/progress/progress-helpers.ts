@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import type { ITopicHierarchy, IChapterProblem } from "@/api/request/chapters.request";
 
 export interface FlatProblem extends IChapterProblem {
@@ -146,14 +147,13 @@ export const computeTopicStats = (topics: ITopicHierarchy[]): TopicProgressStat[
 
 export const computeRecentActivity = (problems: FlatProblem[], daysCount = 14): ActivityDay[] => {
   const result: ActivityDay[] = [];
-  const today = new Date();
+  const today = DateTime.now();
 
   // Create date keys for past N days (YYYY-MM-DD)
   for (let i = daysCount - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
-    const label = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const d = today.minus({ days: i });
+    const dateStr = d.toISODate() ?? "";
+    const label = d.toFormat("MMM d");
     result.push({ date: dateStr, label, count: 0 });
   }
 

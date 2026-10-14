@@ -3,4 +3,9 @@ export const queryKeys = {
   dsaProblems: "dsa-problems",
   dsaChapters: "dsa-chapters",
   dsaHierarchy: "dsa-hierarchy",
+
+  // Calendar
+  calendarMonth: "calendar-month",
+  calendarDay: "calendar-day",
+  calendarPreview: "calendar-preview",
 };

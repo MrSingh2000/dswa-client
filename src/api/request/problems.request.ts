@@ -37,6 +37,7 @@ export interface IProblem {
   youtubeUrl: string;
   completedAt?: string;
   isCompleted: boolean;
+  estimatedMinutes?: number;
 }
 
 export interface DsaProblemsResponse {
