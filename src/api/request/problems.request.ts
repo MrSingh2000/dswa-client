@@ -35,6 +35,8 @@ export interface IProblem {
   topicId: ITopic;
   updatedAt: string;
   youtubeUrl: string;
+  completedAt?: string;
+  isCompleted: boolean;
 }
 
 export interface DsaProblemsResponse {
@@ -60,6 +62,18 @@ export const getDsaProblemsRequest = async (
       topic,
       chapter,
     },
+  });
+  return response.data;
+};
+
+export const updateProblemStatusRequest = async (
+  problemId: string,
+  isCompleted?: boolean,
+  notes?: string,
+) => {
+  const response = await api.patch(endpoints.updateProblemStatus(problemId), {
+    isCompleted,
+    notes,
   });
   return response.data;
 };

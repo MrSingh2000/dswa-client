@@ -17,9 +17,13 @@ import {
   ProblemDificulty,
   type IProblem,
 } from "@/api/request/problems.request";
-import { useGetDsaProblems } from "@/query/dsa-problems/dsa-problems.query";
+import {
+  useGetDsaProblems,
+  useToggleProblemStatus,
+} from "@/query/dsa/dsa-problems.query";
 import { cn } from "cn";
 import Loader from "@/components/loader";
+import { toaster } from "@/utils/toaster";
 
 const AllProblems = () => {
   const [pageNum, setPageNum] = useState(1);
@@ -30,6 +34,9 @@ const AllProblems = () => {
   const [topic, setTopic] = useState<string | undefined>(undefined);
   const [chapter, setChapter] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const { mutate: toggleStatus, isPending: isUpdatingStatus } =
+    useToggleProblemStatus();
 
   const {
     data: dsaProblems,
@@ -42,6 +49,8 @@ const AllProblems = () => {
     topic,
     chapter,
   });
+
+  console.log("porblmes: ", dsaProblems)
 
   const problemsList = dsaProblems?.problems || [];
 
@@ -279,7 +288,7 @@ const AllProblems = () => {
             <table className="w-full text-left text-sm">
               <thead className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur-xs text-xs font-semibold text-muted-foreground shadow-xs">
                 <tr>
-                  <th className="w-12 px-4 py-3.5 text-center">#</th>
+                  <th className="w-16 px-4 py-3.5 text-center">Status</th>
                   <th className="px-4 py-3.5">Problem Title</th>
                   <th className="px-4 py-3.5">Topic</th>
                   <th className="px-4 py-3.5">Chapter</th>
@@ -288,15 +297,42 @@ const AllProblems = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredProblems.map((problem: IProblem, idx: number) => (
+                {filteredProblems.map((problem: IProblem) => (
                   <tr
                     key={problem._id}
-                    className="transition-colors hover:bg-muted/30"
+                    className={cn(
+                      "transition-colors hover:bg-muted/30",
+                      problem.isCompleted && "bg-muted/15",
+                    )}
                   >
-                    <td className="px-4 py-3.5 text-center font-mono text-xs text-muted-foreground">
-                      {problem.order ?? (pageNum - 1) * limit + idx + 1}
+                    <td className="px-4 py-3.5 text-center">
+                      <label className="inline-flex items-center justify-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={problem.isCompleted ?? false}
+                          onChange={() => {
+                            const nextState = !problem.isCompleted;
+                            toggleStatus({
+                              problemId: problem._id,
+                              isCompleted: nextState,
+                            });
+                            if (nextState) {
+                              toaster.success(`Marked "${problem.title}" as completed`);
+                            } else {
+                              toaster.info(`Marked "${problem.title}" as incomplete`);
+                            }
+                          }}
+                          aria-label={`Mark ${problem.title} as completed`}
+                          className="h-4 w-4 rounded-sm border-primary/50 text-primary accent-primary focus:ring-1 focus:ring-ring cursor-pointer transition-all"
+                        />
+                      </label>
                     </td>
-                    <td className="px-4 py-3.5 font-medium text-foreground">
+                    <td
+                      className={cn(
+                        "px-4 py-3.5 font-medium text-foreground",
+                        problem.isCompleted && "line-through text-muted-foreground opacity-80",
+                      )}
+                    >
                       {problem.title}
                     </td>
                     <td className="px-4 py-3.5 text-xs text-muted-foreground">

@@ -5,9 +5,11 @@ import {
   Globe,
   LayoutDashboard,
   BriefcaseBusiness,
-  SettingsIcon,
-  Sparkles,
   type LucideIcon,
+  Bug,
+  TableOfContents,
+  Gauge,
+  CalendarCheck2,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router";
 
@@ -25,13 +27,18 @@ const navOptions: NavOption[] = [
   },
   {
     title: "Chapters",
-    icon: LayoutDashboard,
+    icon: TableOfContents,
     path: "/chapters",
   },
   {
-    title: "Settings",
-    icon: SettingsIcon,
-    path: "/settings",
+    title: "Progress",
+    icon: Gauge,
+    path: "/progress",
+  },
+  {
+    title: "Calendar",
+    icon: CalendarCheck2,
+    path: "/calendar",
   },
 ];
 
@@ -46,7 +53,7 @@ const Sidebar = () => {
     <aside className="flex w-64 shrink-0 flex-col border-r border-border bg-card/40 backdrop-blur-md">
       <div className="flex h-16 items-center gap-2.5 border-b border-border px-6">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-          <Sparkles className="h-5 w-5" />
+          <Bug className="h-5 w-5" />
         </div>
         <div>
           <h2 className="text-base font-semibold tracking-tight text-foreground">
@@ -58,8 +65,9 @@ const Sidebar = () => {
 
       {/* Navigation list */}
       <nav className="flex flex-1 flex-col gap-1 p-3">
-        {navOptions.map((option) => (
+        {navOptions.map((option, index) => (
           <button
+            key={index}
             type="button"
             onClick={() => handleNavigation(option.path)}
             className={cn(
