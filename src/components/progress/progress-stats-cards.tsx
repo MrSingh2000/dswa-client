@@ -1,6 +1,6 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { CheckCircle2, Target, Zap, Award, Layers, Flame } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import { CheckCircle2, Target, Zap, Award, Layers } from "lucide-react";
 import type { ProgressSummaryStats } from "./progress-helpers";
 
 interface ProgressStatsCardsProps {

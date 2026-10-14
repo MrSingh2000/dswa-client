@@ -1,7 +1,6 @@
 import {
   createContext,
   useState,
-  type PropsWithChildren,
   useEffect,
   useContext,
 } from "react";

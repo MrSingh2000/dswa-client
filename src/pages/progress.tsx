@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useGetDsaHierarchyQuery } from "@/query/dsa/dsa-chapters.query";
 import Loader from "@/components/loader";
 import {

@@ -31,6 +31,7 @@
     "zod": "^4.6.6"
   },
   "devDependencies": {
+    "@azure/static-web-apps-cli": "^2.0.10",
     "@babel/core": "^7.29.7",
     "@rolldown/plugin-babel": "^0.2.3",
     "@types/babel__core": "^7.20.5",
