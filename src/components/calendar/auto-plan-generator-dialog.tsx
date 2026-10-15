@@ -95,6 +95,8 @@ export const AutoPlanGeneratorDialog: React.FC<
   const { data: hierarchyData } = useGetDsaHierarchyQuery();
   const topics = hierarchyData?.topics || [];
 
+  console.log("topics - ", topics)
+
   // Preview Query
   const previewPayload: GeneratePlanPayload = {
     topicIds:
@@ -148,7 +150,7 @@ export const AutoPlanGeneratorDialog: React.FC<
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-auto max-w-2xl! max-h-[90vh] flex flex-col p-0 overflow-hidden">
+      <DialogContent className="w-full max-w-xl! h-full max-h-[90vh] flex flex-col p-0 overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b border-border bg-muted/30">
           <div className="flex items-center gap-2.5">
@@ -169,7 +171,7 @@ export const AutoPlanGeneratorDialog: React.FC<
         {/* Scrollable Form Content */}
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex-1 overflow-y-auto p-6 space-y-6"
+          className="flex-1 flex flex-col overflow-y-auto p-6 space-y-6"
         >
           {/* Inputs Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -184,30 +186,40 @@ export const AutoPlanGeneratorDialog: React.FC<
               <Controller
                 name="selectedTopicId"
                 control={control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={isGenerating}
-                  >
-                    <SelectTrigger
-                      id="plan-topic-scope"
-                      className="w-full h-9 text-xs"
+                render={({ field }) => {
+                  const selectedTopic = topics.find((t) => t._id === field.value);
+                  const displayLabel =
+                    field.value === "all"
+                      ? `All Topics (${topics.length} topics)`
+                      : selectedTopic?.title ?? field.value;
+
+                  return (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={isGenerating}
                     >
-                      <SelectValue placeholder="Select curriculum scope" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        All Topics ({topics.length} topics)
-                      </SelectItem>
-                      {topics.map((t) => (
-                        <SelectItem key={t._id} value={t._id}>
-                          {t.title}
+                      <SelectTrigger
+                        id="plan-topic-scope"
+                        className="w-full h-9 text-xs"
+                      >
+                        <SelectValue placeholder="Select curriculum scope">
+                          {field.value ? displayLabel : undefined}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">
+                          All Topics ({topics.length} topics)
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+                        {topics.map((t) => (
+                          <SelectItem key={t._id} value={t._id}>
+                            {t.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  );
+                }}
               />
               <FormError error={errors.selectedTopicId} />
             </div>
@@ -360,7 +372,7 @@ export const AutoPlanGeneratorDialog: React.FC<
 
           {/* Sample breakdown preview */}
           {previewData && previewData.dailyBreakdown.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1">
               <span className="text-xs font-semibold text-muted-foreground">
                 Sample Schedule (First 3 Days)
               </span>
