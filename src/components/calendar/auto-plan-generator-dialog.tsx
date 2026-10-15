@@ -95,7 +95,7 @@ export const AutoPlanGeneratorDialog: React.FC<
   const { data: hierarchyData } = useGetDsaHierarchyQuery();
   const topics = hierarchyData?.topics || [];
 
-  console.log("topics - ", topics)
+  console.log("topics - ", topics);
 
   // Preview Query
   const previewPayload: GeneratePlanPayload = {
@@ -169,273 +169,279 @@ export const AutoPlanGeneratorDialog: React.FC<
         </DialogHeader>
 
         {/* Scrollable Form Content */}
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="flex-1 flex flex-col overflow-y-auto p-6 space-y-6"
-        >
-          {/* Inputs Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Topic Selection */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="plan-topic-scope"
-                className="text-xs font-semibold"
-              >
-                Curriculum Scope
-              </Label>
-              <Controller
-                name="selectedTopicId"
-                control={control}
-                render={({ field }) => {
-                  const selectedTopic = topics.find((t) => t._id === field.value);
-                  const displayLabel =
-                    field.value === "all"
-                      ? `All Topics (${topics.length} topics)`
-                      : selectedTopic?.title ?? field.value;
-
-                  return (
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={isGenerating}
-                    >
-                      <SelectTrigger
-                        id="plan-topic-scope"
-                        className="w-full h-9 text-xs"
-                      >
-                        <SelectValue placeholder="Select curriculum scope">
-                          {field.value ? displayLabel : undefined}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">
-                          All Topics ({topics.length} topics)
-                        </SelectItem>
-                        {topics.map((t) => (
-                          <SelectItem key={t._id} value={t._id}>
-                            {t.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  );
-                }}
-              />
-              <FormError error={errors.selectedTopicId} />
-            </div>
-
-            {/* Start Date */}
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="plan-start-date"
-                className="text-xs font-semibold"
-              >
-                Start Date
-              </Label>
-              <Input
-                id="plan-start-date"
-                type="date"
-                min={tomorrowStr}
-                disabled={isGenerating}
-                aria-invalid={!!errors.startDate}
-                className="h-9 text-xs"
-                {...register("startDate")}
-              />
-              <FormError error={errors.startDate} />
-            </div>
-
-            {/* Daily Hours Commitment */}
-            <div className="space-y-1.5 sm:col-span-2">
-              <div className="flex items-center justify-between">
+        {isPreviewLoading ? (
+          <div className="flex flex-1 items-center justify-center rounded-xl">
+            <Loader size={20} text="Calculating timeline..." />
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex-1 flex flex-col overflow-y-auto p-6 space-y-6"
+          >
+            {/* Inputs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Topic Selection */}
+              <div className="space-y-1.5">
                 <Label
-                  htmlFor="plan-daily-hours"
+                  htmlFor="plan-topic-scope"
                   className="text-xs font-semibold"
                 >
-                  Daily Study Hours Commitment
+                  Curriculum Scope
                 </Label>
-                <span className="text-xs font-mono font-bold text-primary">
-                  {watchedValues.dailyHours}{" "}
-                  {watchedValues.dailyHours === 1 ? "hour" : "hours"} / day (
-                  {Math.round(Number(watchedValues.dailyHours) * 60)} mins)
-                </span>
-              </div>
+                <Controller
+                  name="selectedTopicId"
+                  control={control}
+                  render={({ field }) => {
+                    const selectedTopic = topics.find(
+                      (t) => t._id === field.value,
+                    );
+                    const displayLabel =
+                      field.value === "all"
+                        ? `All Topics (${topics.length} topics)`
+                        : (selectedTopic?.title ?? field.value);
 
-              {/* Quick Preset Buttons */}
-              <div className="flex items-center gap-2 pt-1">
-                {PRESET_HOURS.map((h) => (
-                  <button
-                    key={h}
-                    type="button"
-                    disabled={isGenerating}
-                    onClick={() =>
-                      setValue("dailyHours", h, { shouldValidate: true })
-                    }
-                    className={cn(
-                      "flex-1 rounded-lg border py-1.5 text-xs font-medium transition-colors cursor-pointer",
-                      watchedValues.dailyHours === h
-                        ? "border-primary bg-primary text-primary-foreground font-bold shadow-xs"
-                        : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
-                    )}
-                  >
-                    {h}h
-                  </button>
-                ))}
-              </div>
-              <FormError error={errors.dailyHours} />
-            </div>
-
-            {/* Checkboxes */}
-            <div className="sm:col-span-2 flex flex-col gap-2 pt-1">
-              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  disabled={isGenerating}
-                  className="rounded border-border text-primary accent-primary"
-                  {...register("includeSolved")}
-                />
-                Include already completed problems (Full Revision mode)
-              </label>
-
-              <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  disabled={isGenerating}
-                  className="rounded border-border text-primary accent-primary"
-                  {...register("replaceExisting")}
-                />
-                Replace future incomplete schedule items starting from start
-                date
-              </label>
-            </div>
-          </div>
-
-          {/* Interactive Estimation Summary Card */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Roadmap Projection
-              </span>
-              {isPreviewFetching && (
-                <span className="text-[10px] text-muted-foreground animate-pulse">
-                  Recalculating...
-                </span>
-              )}
-            </div>
-
-            {isPreviewLoading ? (
-              <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-border">
-                <Loader size={20} text="Calculating timeline..." />
-              </div>
-            ) : previewData ? (
-              <Card className="border border-border/80 bg-muted/30 shadow-none">
-                <CardContent className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                  <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <BookOpen className="h-3 w-3" /> Problems
-                    </span>
-                    <span className="text-lg font-bold text-foreground mt-0.5">
-                      {previewData.totalProblems}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <Clock className="h-3 w-3" /> Total Hours
-                    </span>
-                    <span className="text-lg font-bold text-foreground mt-0.5">
-                      {previewData.totalHours}h
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <CalendarIcon className="h-3 w-3" /> Duration
-                    </span>
-                    <span className="text-lg font-bold text-foreground mt-0.5">
-                      {previewData.daysCount} days
-                    </span>
-                  </div>
-
-                  <div className="flex flex-col">
-                    <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                      <CheckCircle className="h-3 w-3 text-emerald-500" />{" "}
-                      Completion
-                    </span>
-                    <span className="text-xs font-bold text-emerald-500 mt-1 truncate">
-                      {previewData.endDate}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : null}
-          </div>
-
-          {/* Sample breakdown preview */}
-          {previewData && previewData.dailyBreakdown.length > 0 && (
-            <div className="space-y-2 flex-1">
-              <span className="text-xs font-semibold text-muted-foreground">
-                Sample Schedule (First 3 Days)
-              </span>
-
-              <div className="space-y-2">
-                {previewData.dailyBreakdown.slice(0, 3).map((day, idx) => (
-                  <div
-                    key={day.date}
-                    className="flex items-center justify-between rounded-lg border border-border bg-background p-2.5 text-xs gap-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className="font-mono text-[10px]"
+                    return (
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={isGenerating}
                       >
-                        Day {idx + 1} ({day.date})
-                      </Badge>
-                      <span className="text-foreground font-medium truncate max-w-[280px]">
-                        {day.problems.map((p) => p.title).join(", ")}
+                        <SelectTrigger
+                          id="plan-topic-scope"
+                          className="w-full h-9 text-xs"
+                        >
+                          <SelectValue placeholder="Select curriculum scope">
+                            {field.value ? displayLabel : undefined}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">
+                            All Topics ({topics.length} topics)
+                          </SelectItem>
+                          {topics.map((t) => (
+                            <SelectItem key={t._id} value={t._id}>
+                              {t.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
+                />
+                <FormError error={errors.selectedTopicId} />
+              </div>
+
+              {/* Start Date */}
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="plan-start-date"
+                  className="text-xs font-semibold"
+                >
+                  Start Date
+                </Label>
+                <Input
+                  id="plan-start-date"
+                  type="date"
+                  min={tomorrowStr}
+                  disabled={isGenerating}
+                  aria-invalid={!!errors.startDate}
+                  className="h-9 text-xs"
+                  {...register("startDate")}
+                />
+                <FormError error={errors.startDate} />
+              </div>
+
+              {/* Daily Hours Commitment */}
+              <div className="space-y-1.5 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor="plan-daily-hours"
+                    className="text-xs font-semibold"
+                  >
+                    Daily Study Hours Commitment
+                  </Label>
+                  <span className="text-xs font-mono font-bold text-primary">
+                    {watchedValues.dailyHours}{" "}
+                    {watchedValues.dailyHours === 1 ? "hour" : "hours"} / day (
+                    {Math.round(Number(watchedValues.dailyHours) * 60)} mins)
+                  </span>
+                </div>
+
+                {/* Quick Preset Buttons */}
+                <div className="flex items-center gap-2 pt-1">
+                  {PRESET_HOURS.map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      disabled={isGenerating}
+                      onClick={() =>
+                        setValue("dailyHours", h, { shouldValidate: true })
+                      }
+                      className={cn(
+                        "flex-1 rounded-lg border py-1.5 text-xs font-medium transition-colors cursor-pointer",
+                        watchedValues.dailyHours === h
+                          ? "border-primary bg-primary text-primary-foreground font-bold shadow-xs"
+                          : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      {h}h
+                    </button>
+                  ))}
+                </div>
+                <FormError error={errors.dailyHours} />
+              </div>
+
+              {/* Checkboxes */}
+              <div className="sm:col-span-2 flex flex-col gap-2 pt-1">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    disabled={isGenerating}
+                    className="rounded border-border text-primary accent-primary"
+                    {...register("includeSolved")}
+                  />
+                  Include already completed problems (Full Revision mode)
+                </label>
+
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    disabled={isGenerating}
+                    className="rounded border-border text-primary accent-primary"
+                    {...register("replaceExisting")}
+                  />
+                  Replace future incomplete schedule items starting from start
+                  date
+                </label>
+              </div>
+            </div>
+
+            {/* Interactive Estimation Summary Card */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Roadmap Projection
+                </span>
+                {isPreviewFetching && (
+                  <span className="text-[10px] text-muted-foreground animate-pulse">
+                    Recalculating...
+                  </span>
+                )}
+              </div>
+
+              {previewData ? (
+                <Card className="border border-border/80 bg-muted/30 shadow-none">
+                  <CardContent className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                        <BookOpen className="h-3 w-3" /> Problems
+                      </span>
+                      <span className="text-lg font-bold text-foreground mt-0.5">
+                        {previewData.totalProblems}
                       </span>
                     </div>
 
-                    <span className="text-muted-foreground font-mono text-[10px]">
-                      {day.totalMinutes}m planned
-                    </span>
-                  </div>
-                ))}
-              </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                        <Clock className="h-3 w-3" /> Total Hours
+                      </span>
+                      <span className="text-lg font-bold text-foreground mt-0.5">
+                        {previewData.totalHours}h
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                        <CalendarIcon className="h-3 w-3" /> Duration
+                      </span>
+                      <span className="text-lg font-bold text-foreground mt-0.5">
+                        {previewData.daysCount} days
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                        <CheckCircle className="h-3 w-3 text-emerald-500" />{" "}
+                        Completion
+                      </span>
+                      <span className="text-xs font-bold text-emerald-500 mt-1 truncate">
+                        {previewData.endDate}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null}
             </div>
-          )}
 
-          {/* Dialog Footer Actions */}
-          <DialogFooter className="border-t border-border bg-muted/20 -mx-6 -mb-6 px-6 py-3.5">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              disabled={isGenerating}
-              className="text-xs cursor-pointer"
-            >
-              Cancel
-            </Button>
+            {/* Sample breakdown preview */}
+            {previewData && previewData.dailyBreakdown.length > 0 && (
+              <div className="space-y-2 flex-1">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  Sample Schedule (First 3 Days)
+                </span>
 
-            <Button
-              type="submit"
-              size="sm"
-              disabled={
-                isGenerating || !previewData || previewData.totalProblems === 0
-              }
-              className="gap-2 text-xs cursor-pointer shadow-xs"
-            >
-              {isGenerating ? (
-                <Loader size={14} text="" />
-              ) : (
-                <>
-                  <span>Generate Calendar Roadmap</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+                <div className="space-y-2">
+                  {previewData.dailyBreakdown.slice(0, 3).map((day, idx) => (
+                    <div
+                      key={day.date}
+                      className="flex items-center justify-between rounded-lg border border-border bg-background p-2.5 text-xs gap-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="font-mono text-[10px]"
+                        >
+                          Day {idx + 1} ({day.date})
+                        </Badge>
+                        <span className="text-foreground font-medium truncate max-w-[280px]">
+                          {day.problems.map((p) => p.title).join(", ")}
+                        </span>
+                      </div>
+
+                      <span className="text-muted-foreground font-mono text-[10px]">
+                        {day.totalMinutes}m planned
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Dialog Footer Actions */}
+            <DialogFooter className="border-t border-border bg-muted/20 -mx-6 -mb-6 px-6 py-3.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                disabled={isGenerating}
+                className="text-xs cursor-pointer"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="submit"
+                size="sm"
+                disabled={
+                  isGenerating ||
+                  !previewData ||
+                  previewData.totalProblems === 0
+                }
+                className="gap-2 text-xs cursor-pointer shadow-xs"
+              >
+                {isGenerating ? (
+                  <Loader size={14} text="" />
+                ) : (
+                  <>
+                    <span>Generate Calendar Roadmap</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
